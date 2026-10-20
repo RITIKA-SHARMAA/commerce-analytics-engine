@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "noEmit": true, "types": ["node", "jest"] },
+  "include": ["apps/api/src/**/*.ts", "apps/worker/src/**/*.ts", "apps/mock-ads/src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+}

@@ -1,0 +1,51 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build: .
+    command: npm run dev:api
+    env_file: .env
+    ports: ["4000:4000"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mock-ads: { condition: service_started }
+    volumes: [".:/app", "/app/node_modules"]
+  worker:
+    build: .
+    command: npm run dev:worker
+    env_file: .env
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mock-ads: { condition: service_started }
+    volumes: [".:/app", "/app/node_modules"]
+  mock-ads:
+    build: .
+    command: npm run dev:mock-ads
+    ports: ["4100:4100"]
+    volumes: [".:/app", "/app/node_modules"]
+  dashboard:
+    build: ./apps/dashboard
+    ports: ["5173:5173"]
+    environment: ["VITE_API_URL=http://localhost:4000"]
+    depends_on: [api]
+volumes:
+  mongo-data:
